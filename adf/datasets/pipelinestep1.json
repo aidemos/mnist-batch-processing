@@ -1,0 +1,22 @@
+{
+    "name": "pipelinestep1",
+    "properties": {
+        "linkedServiceName": {
+            "referenceName": "<linkedservicename>",
+            "type": "LinkedServiceReference"
+        },
+        "annotations": [],
+        "type": "Binary",
+        "typeProperties": {
+            "location": {
+                "type": "AzureBlobStorageLocation",
+                "folderPath": {
+                    "value": "@concat('mnist/version_1/',formatDateTime(pipeline().TriggerTime))",
+                    "type": "Expression"
+                },
+                "container": "<container name>"
+            }
+        }
+    },
+    "type": "Microsoft.DataFactory/factories/datasets"
+}
