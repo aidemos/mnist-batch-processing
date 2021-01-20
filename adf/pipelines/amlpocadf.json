@@ -1,0 +1,151 @@
+{
+    "name": "imagebatchprocessing",
+    "properties": {
+        "activities": [
+            {
+                "name": "IfFilesExist",
+                "type": "IfCondition",
+                "dependsOn": [
+                    {
+                        "activity": "GetFileCount",
+                        "dependencyConditions": [
+                            "Succeeded"
+                        ]
+                    }
+                ],
+                "userProperties": [],
+                "typeProperties": {
+                    "expression": {
+                        "value": "@if( contains(activity('GetFileCount').output,'childitems'), length(activity('GetFileCount').output.childitems), equals(2,3))",
+                        "type": "Expression"
+                    },
+                    "ifTrueActivities": [
+                        {
+                            "name": "MoveFilesToSubFolder",
+                            "type": "Copy",
+                            "dependsOn": [],
+                            "policy": {
+                                "timeout": "7.00:00:00",
+                                "retry": 0,
+                                "retryIntervalInSeconds": 30,
+                                "secureOutput": false,
+                                "secureInput": false
+                            },
+                            "userProperties": [],
+                            "typeProperties": {
+                                "source": {
+                                    "type": "BinarySource",
+                                    "storeSettings": {
+                                        "type": "AzureBlobStorageReadSettings",
+                                        "recursive": true,
+                                        "deleteFilesAfterCompletion": true
+                                    },
+                                    "formatSettings": {
+                                        "type": "BinaryReadSettings"
+                                    }
+                                },
+                                "sink": {
+                                    "type": "BinarySink",
+                                    "storeSettings": {
+                                        "type": "AzureBlobStorageWriteSettings"
+                                    }
+                                },
+                                "enableStaging": false
+                            },
+                            "inputs": [
+                                {
+                                    "referenceName": "landingfolder",
+                                    "type": "DatasetReference"
+                                }
+                            ],
+                            "outputs": [
+                                {
+                                    "referenceName": "pipelinestep1",
+                                    "type": "DatasetReference"
+                                }
+                            ]
+                        },
+                        {
+                            "name": "DigitIdentification",
+                            "type": "AzureMLExecutePipeline",
+                            "dependsOn": [
+                                {
+                                    "activity": "MoveFilesToSubFolder",
+                                    "dependencyConditions": [
+                                        "Succeeded"
+                                    ]
+                                }
+                            ],
+                            "policy": {
+                                "timeout": "7.00:00:00",
+                                "retry": 0,
+                                "retryIntervalInSeconds": 30,
+                                "secureOutput": false,
+                                "secureInput": false
+                            },
+                            "userProperties": [],
+                            "typeProperties": {
+                                "mlPipelineId": "<Azure ML pipeline Id>",
+                                "experimentName": "<Azure ML experiment name>",
+                                "mlPipelineParameters": {
+                                    "process_folder_param": {
+                                        "value": "@variables('processfolderpath')",
+                                        "type": "Expression"
+                                    }
+                                }
+                            },
+                            "linkedServiceName": {
+                                "referenceName": "<linkedservicename>",
+                                "type": "LinkedServiceReference"
+                            }
+                        }
+                    ]
+                }
+            },
+            {
+                "name": "GetFileCount",
+                "type": "GetMetadata",
+                "dependsOn": [],
+                "policy": {
+                    "timeout": "7.00:00:00",
+                    "retry": 0,
+                    "retryIntervalInSeconds": 30,
+                    "secureOutput": false,
+                    "secureInput": false
+                },
+                "userProperties": [],
+                "typeProperties": {
+                    "dataset": {
+                        "referenceName": "landingfolder",
+                        "type": "DatasetReference"
+                    },
+                    "fieldList": [
+                        "childItems",
+                        "exists"
+                    ],
+                    "storeSettings": {
+                        "type": "AzureBlobStorageReadSettings",
+                        "recursive": true,
+                        "enablePartitionDiscovery": false
+                    },
+                    "formatSettings": {
+                        "type": "BinaryReadSettings"
+                    }
+                }
+            }
+        ],
+        "variables": {
+            "triggerstarttime": {
+                "type": "String",
+                "defaultValue": "@trigger().startTime"
+            },
+            "processfolderpath": {
+                "type": "String",
+                "defaultValue": "@concat('mnist/version_1/',formatDateTime(pipeline().TriggerTime))"
+            }
+        },
+        "annotations": [],
+        "lastPublishTime": "2020-12-23T08:49:00Z"
+    },
+    "type": "Microsoft.DataFactory/factories/pipelines"
+}
